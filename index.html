@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Expedientes</title>
+  </head>
+  <body>
+    <h2>Cargar expediente</h2>
+
+    <input id="numero" placeholder="N° expediente" /><br />
+    <textarea id="detalle" placeholder="Detalle"></textarea><br />
+    <input id="interno" placeholder="Interno" /><br />
+    <input id="lpu" placeholder="LPU" /><br />
+    <input id="tag" placeholder="Tag" maxlength="20" /><br />
+    <input id="fecha" type="date" /><br />
+
+    <button onclick="guardar()">Guardar</button>
+
+    <hr />
+
+    <h2>Filtros</h2>
+
+    <input id="f_numero" placeholder="Expediente" />
+    <input id="f_interno" placeholder="Interno" />
+    <input id="f_lpu" placeholder="LPU" />
+    <input id="f_tag" placeholder="Tag" />
+    <input id="f_fecha" type="date" />
+
+    <button onclick="buscar()">Buscar</button>
+
+    <hr />
+
+    <h2>Resultados</h2>
+    <div id="resultados"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <script>
+      const supabaseClient = supabase.createClient(
+        "https://efwfieepcaiftkgqsciq.supabase.co/rest/v1/",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmd2ZpZWVwY2FpZnRrZ3FzY2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczOTI1MjUsImV4cCI6MjA5Mjk2ODUyNX0.Xv6_NbBSlMv4aNJ6-XVR_5MYuuyZNHhcYNdGYn3F7_Y",
+      );
+
+      async function guardar() {
+        const data = {
+          numero_expediente: numero.value,
+          detalle: detalle.value,
+          interno: interno.value,
+          lpu: lpu.value,
+          tag: tag.value,
+          fecha: fecha.value,
+        };
+
+        if (!data.numero_expediente || !data.detalle) {
+          alert("Completar campos obligatorios");
+          return;
+        }
+
+        const { error } = await supabaseClient
+          .from("expedientes")
+          .insert([data]);
+
+        if (error) alert(error.message);
+        else {
+          alert("Guardado");
+          buscar();
+        }
+      }
+
+      async function buscar() {
+        let query = supabaseClient.from("expedientes").select("*");
+
+        if (f_numero.value)
+          query = query.ilike("numero_expediente", `%${f_numero.value}%`);
+        if (f_interno.value)
+          query = query.ilike("interno", `%${f_interno.value}%`);
+        if (f_lpu.value) query = query.ilike("lpu", `%${f_lpu.value}%`);
+        if (f_tag.value) query = query.ilike("tag", `%${f_tag.value}%`);
+        if (f_fecha.value) query = query.eq("fecha", f_fecha.value);
+
+        const { data } = await query.order("fecha", { ascending: false });
+
+        resultados.innerHTML = "";
+
+        data.forEach((e) => {
+          resultados.innerHTML += `
+      <div style="border:1px solid #ccc;margin:5px;padding:5px;">
+        <b>${e.numero_expediente}</b><br>
+        ${e.detalle}<br>
+        Interno: ${e.interno || "-"} | LPU: ${e.lpu || "-"} | Tag: ${e.tag || "-"}<br>
+        Fecha: ${e.fecha}
+      </div>
+    `;
+        });
+      }
+
+      buscar();
+    </script>
+  </body>
+</html>
