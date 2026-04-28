@@ -1,222 +1,983 @@
 <!doctype html>
-<html>
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Expedientes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
     <style>
+      :root {
+        --bg:        #f5f4f1;
+        --surface:   #ffffff;
+        --border:    #e2e0da;
+        --border-md: #cccac2;
+        --text:      #1a1916;
+        --muted:     #7a7870;
+        --faint:     #b0ada4;
+        --accent:    #1a1916;
+        --accent-fg: #f5f4f1;
+        --tag-bg:    #eef3ff;
+        --tag-text:  #2d4baa;
+        --danger:    #c0392b;
+        --danger-bg: #fff5f5;
+        --success:   #1a7a4a;
+        --success-bg:#f0faf5;
+        --radius:    10px;
+        --radius-lg: 14px;
+        --shadow:    0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+        --shadow-md: 0 4px 16px rgba(0,0,0,.08), 0 1px 4px rgba(0,0,0,.04);
+      }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
       body {
-        font-family: Arial;
-        max-width: 800px;
-        margin: auto;
-        padding: 20px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 14px;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
       }
 
-      input,
-      textarea,
-      button {
-        margin: 5px 0;
-        padding: 8px;
-        width: 100%;
+      /* ── Layout ── */
+      .layout {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        min-height: 100vh;
       }
 
-      button {
+      /* ── Sidebar ── */
+      .sidebar {
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+
+      .sidebar-header {
+        padding: 28px 24px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .logo {
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: -.01em;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+
+      .logo-icon {
+        width: 30px;
+        height: 30px;
+        background: var(--text);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .logo-icon svg { color: var(--accent-fg); }
+
+      .sidebar-section {
+        padding: 20px 16px 12px;
+      }
+
+      .sidebar-label {
+        font-size: 10.5px;
+        font-weight: 500;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--faint);
+        padding: 0 8px;
+        margin-bottom: 6px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 13.5px;
+        color: var(--muted);
         cursor: pointer;
+        transition: background .12s, color .12s;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        font-family: inherit;
       }
 
-      .card {
-        border: 1px solid #ccc;
-        padding: 10px;
-        margin-top: 10px;
+      .nav-item:hover { background: var(--bg); color: var(--text); }
+      .nav-item.active { background: var(--bg); color: var(--text); font-weight: 500; }
+
+      .nav-item svg { flex-shrink: 0; opacity: .7; }
+      .nav-item.active svg { opacity: 1; }
+
+      .sidebar-footer {
+        margin-top: auto;
+        padding: 16px;
+        border-top: 1px solid var(--border);
+      }
+
+      .user-pill {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: var(--bg);
+      }
+
+      .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--text);
+        color: var(--accent-fg);
+        font-size: 11px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-family: 'DM Mono', monospace;
+      }
+
+      .user-info { flex: 1; min-width: 0; }
+      .user-email { font-size: 12px; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .user-status { font-size: 11px; color: var(--muted); }
+
+      .btn-logout {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--faint);
+        padding: 4px;
         border-radius: 6px;
+        display: flex;
+        align-items: center;
+        transition: color .12s, background .12s;
+      }
+
+      .btn-logout:hover { color: var(--danger); background: var(--danger-bg); }
+
+      /* ── Main ── */
+      .main {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
       }
 
       .topbar {
+        padding: 18px 32px;
+        border-bottom: 1px solid var(--border);
         display: flex;
+        align-items: center;
         justify-content: space-between;
-        margin-bottom: 20px;
+        background: var(--surface);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .page-title { font-size: 16px; font-weight: 500; letter-spacing: -.01em; }
+      .page-sub { font-size: 13px; color: var(--muted); margin-top: 1px; }
+
+      /* ── Panels ── */
+      .panel { display: none; flex-direction: column; gap: 0; flex: 1; }
+      .panel.active { display: flex; }
+
+      /* ── Login panel ── */
+      .login-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        padding: 40px;
+        min-height: 100vh;
+      }
+
+      .login-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 40px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: var(--shadow-md);
+      }
+
+      .login-title { font-size: 22px; font-weight: 500; letter-spacing: -.02em; margin-bottom: 6px; }
+      .login-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+      /* ── Forms ── */
+      .form-section {
+        padding: 28px 32px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .form-grid-2 { grid-template-columns: 1fr 1fr; }
+      .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+      .form-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+      .col-2 { grid-column: span 2; }
+
+      .field { display: flex; flex-direction: column; gap: 5px; }
+
+      label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+        letter-spacing: .01em;
+      }
+
+      input, textarea, select {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 14px;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        color: var(--text);
+        width: 100%;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+        -webkit-appearance: none;
+      }
+
+      input:hover, textarea:hover { border-color: var(--border-md); }
+
+      input:focus, textarea:focus, select:focus {
+        border-color: var(--text);
+        box-shadow: 0 0 0 3px rgba(26,25,22,.08);
+      }
+
+      input::placeholder, textarea::placeholder { color: var(--faint); }
+
+      textarea { resize: vertical; min-height: 80px; line-height: 1.55; }
+
+      input[type="date"] {
+        font-family: 'DM Mono', monospace;
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .form-actions { display: flex; gap: 8px; margin-top: 16px; align-items: center; }
+
+      /* ── Buttons ── */
+      .btn {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 13.5px;
+        font-weight: 500;
+        padding: 9px 18px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: background .12s, border-color .12s, opacity .12s, transform .08s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        background: var(--surface);
+        color: var(--text);
+        line-height: 1;
+      }
+
+      .btn:hover { background: var(--bg); border-color: var(--border-md); }
+      .btn:active { transform: scale(.98); }
+
+      .btn-primary {
+        background: var(--text);
+        color: var(--accent-fg);
+        border-color: var(--text);
+      }
+
+      .btn-primary:hover { opacity: .85; background: var(--text); }
+
+      .btn-ghost {
+        border-color: transparent;
+        background: transparent;
+        color: var(--muted);
+      }
+
+      .btn-ghost:hover { background: var(--bg); color: var(--text); border-color: transparent; }
+
+      .btn-danger-soft {
+        border-color: transparent;
+        background: transparent;
+        color: var(--danger);
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+
+      .btn-danger-soft:hover { background: var(--danger-bg); border-color: transparent; }
+
+      .btn-edit-soft {
+        border-color: transparent;
+        background: transparent;
+        color: var(--muted);
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+
+      .btn-edit-soft:hover { background: var(--bg); color: var(--text); border-color: transparent; }
+
+      .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+      /* ── Search / Filter bar ── */
+      .filter-bar {
+        padding: 16px 32px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+
+      .filter-bar .field { flex: 1; min-width: 140px; }
+
+      .filter-bar input {
+        background: var(--surface);
+        font-size: 13px;
+        padding: 8px 11px;
+      }
+
+      /* ── Stats bar ── */
+      .stats-bar {
+        padding: 16px 32px;
+        display: flex;
+        gap: 24px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .stat-item { display: flex; flex-direction: column; gap: 2px; }
+      .stat-num { font-size: 20px; font-weight: 500; letter-spacing: -.02em; font-family: 'DM Mono', monospace; }
+      .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 500; }
+      .stat-divider { width: 1px; background: var(--border); align-self: stretch; }
+
+      /* ── Results ── */
+      .results-wrap {
+        flex: 1;
+        padding: 24px 32px;
+        background: var(--bg);
+      }
+
+      .results-count {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 500;
+        letter-spacing: .01em;
+        margin-bottom: 14px;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+      }
+
+      /* ── Cards ── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 18px 20px;
+        margin-bottom: 8px;
+        transition: border-color .15s, box-shadow .15s;
+        position: relative;
+      }
+
+      .card:hover {
+        border-color: var(--border-md);
+        box-shadow: var(--shadow);
+      }
+
+      .card-inner { display: flex; gap: 16px; align-items: flex-start; }
+
+      .card-index {
+        font-family: 'DM Mono', monospace;
+        font-size: 11px;
+        color: var(--faint);
+        padding-top: 2px;
+        flex-shrink: 0;
+        min-width: 28px;
+      }
+
+      .card-body { flex: 1; min-width: 0; }
+
+      .card-head {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 5px;
+        flex-wrap: wrap;
+      }
+
+      .card-num {
+        font-size: 14px;
+        font-weight: 500;
+        font-family: 'DM Mono', monospace;
+        letter-spacing: -.01em;
+        color: var(--text);
+      }
+
+      .card-detalle {
+        font-size: 13.5px;
+        color: var(--muted);
+        line-height: 1.55;
+        margin-bottom: 10px;
+      }
+
+      .card-chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .chip {
+        font-size: 11.5px;
+        padding: 3px 9px;
+        border-radius: 20px;
+        font-weight: 500;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        background: var(--bg);
+        font-family: 'DM Mono', monospace;
+        letter-spacing: -.01em;
+      }
+
+      .chip-tag {
+        background: var(--tag-bg);
+        color: var(--tag-text);
+        border-color: transparent;
+      }
+
+      .chip-fecha {
+        color: var(--faint);
+        border-color: transparent;
+        background: transparent;
+        font-size: 11px;
+      }
+
+      .card-actions {
+        display: flex;
+        gap: 2px;
+        flex-shrink: 0;
+        opacity: 0;
+        transition: opacity .15s;
+        align-items: flex-start;
+      }
+
+      .card:hover .card-actions { opacity: 1; }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 20px;
+        color: var(--faint);
+        gap: 10px;
+      }
+
+      .empty-state svg { opacity: .35; }
+      .empty-state p { font-size: 14px; }
+
+      /* ── Modal ── */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(10,10,8,.45);
+        z-index: 200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(2px);
+      }
+
+      .overlay.open { display: flex; }
+
+      .modal {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: var(--shadow-md);
+        animation: slideUp .18s ease;
+      }
+
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+      .modal-title { font-size: 16px; font-weight: 500; letter-spacing: -.01em; }
+      .modal-close { background: none; border: none; cursor: pointer; color: var(--faint); padding: 4px; border-radius: 6px; transition: color .12s, background .12s; }
+      .modal-close:hover { color: var(--text); background: var(--bg); }
+      .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+      /* ── Misc ── */
+      .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+      .error-msg {
+        font-size: 12px;
+        color: var(--danger);
+        padding: 8px 12px;
+        background: var(--danger-bg);
+        border-radius: var(--radius);
+        margin-top: 10px;
+        display: none;
+      }
+
+      .error-msg.show { display: block; }
+
+      /* ── Responsive ── */
+      @media (max-width: 720px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+        .form-grid-2, .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
+        .col-2 { grid-column: span 1; }
+        .form-section, .results-wrap, .filter-bar, .stats-bar, .topbar { padding-left: 16px; padding-right: 16px; }
+        .login-wrap { padding: 20px; }
       }
     </style>
   </head>
 
   <body>
-    <div class="topbar">
-      <div id="estado">No logueado</div>
-      <button onclick="logout()">Logout</button>
+
+    <!-- ── LOGIN (shown when not authenticated) ── -->
+    <div id="loginWrap" class="login-wrap">
+      <div class="login-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px">
+          <div class="logo-icon">
+            <svg width="16" height="16" fill="none" stroke="#f5f4f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <span style="font-size:15px;font-weight:500;letter-spacing:-.01em">Expedientes</span>
+        </div>
+        <div class="login-title">Iniciar sesión</div>
+        <div class="login-sub">Ingresá tus credenciales para continuar.</div>
+        <div class="form-grid" style="gap:12px">
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" placeholder="usuario@ejemplo.com" autocomplete="email" />
+          </div>
+          <div class="field">
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+          </div>
+        </div>
+        <div class="error-msg" id="loginError"></div>
+        <div class="form-actions">
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="login()">Ingresar</button>
+        </div>
+      </div>
     </div>
 
-    <h2>Login</h2>
+    <!-- ── APP (shown when authenticated) ── -->
+    <div id="appWrap" class="layout" style="display:none">
 
-    <input id="email" placeholder="email" />
-    <input id="password" type="password" placeholder="password" />
-    <button onclick="login()">Login</button>
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo">
+            <div class="logo-icon">
+              <svg width="16" height="16" fill="none" stroke="#f5f4f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            Expedientes
+          </div>
+        </div>
 
-    <hr />
+        <div class="sidebar-section">
+          <div class="sidebar-label">Menú</div>
+          <button class="nav-item active" onclick="setPanel('lista', this)">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Todos los expedientes
+          </button>
+          <button class="nav-item" onclick="setPanel('nuevo', this)">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Nuevo expediente
+          </button>
+        </div>
 
-    <h2>Cargar expediente</h2>
+        <div class="sidebar-footer">
+          <div class="user-pill">
+            <div class="avatar" id="avatar">--</div>
+            <div class="user-info">
+              <div class="user-email" id="userEmail">—</div>
+              <div class="user-status">Conectado</div>
+            </div>
+            <button class="btn-logout" onclick="logout()" title="Cerrar sesión">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
 
-    <input id="numero" placeholder="N° expediente" />
-    <textarea id="detalle" placeholder="Detalle"></textarea>
-    <input id="interno" placeholder="Interno" />
-    <input id="lpu" placeholder="LPU" />
-    <input id="tag" maxlength="20" placeholder="Tag" />
-    <input id="fecha" type="date" />
+      <!-- Main -->
+      <main class="main">
 
-    <button onclick="guardar()">Guardar</button>
+        <!-- ── Panel: Lista ── -->
+        <div class="panel active" id="panelLista">
 
-    <hr />
+          <div class="topbar">
+            <div>
+              <div class="page-title">Expedientes</div>
+              <div class="page-sub">Registros de la base de datos</div>
+            </div>
+          </div>
 
-    <h2>Filtros</h2>
+          <div class="stats-bar">
+            <div class="stat-item">
+              <div class="stat-num" id="statTotal">—</div>
+              <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-num" id="statMes">—</div>
+              <div class="stat-label">Este mes</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-num" id="statFiltrados">—</div>
+              <div class="stat-label">Filtrados</div>
+            </div>
+          </div>
 
-    <input id="f_numero" placeholder="Expediente" />
-    <input id="f_tag" placeholder="Tag" />
-    <input id="f_fecha" type="date" />
+          <div class="filter-bar">
+            <div class="field">
+              <label>Expediente</label>
+              <input id="f_numero" placeholder="Buscar por número…" oninput="buscar()" />
+            </div>
+            <div class="field">
+              <label>Tag</label>
+              <input id="f_tag" placeholder="Filtrar por tag…" oninput="buscar()" />
+            </div>
+            <div class="field" style="max-width:160px">
+              <label>Fecha</label>
+              <input id="f_fecha" type="date" onchange="buscar()" />
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="limpiarFiltros()">Limpiar</button>
+          </div>
 
-    <button onclick="buscar()">Buscar</button>
-    <button onclick="limpiarFiltros()">Limpiar filtros</button>
+          <div class="results-wrap">
+            <div class="results-count" id="resultsCount"></div>
+            <div id="resultados"></div>
+          </div>
+        </div>
 
-    <hr />
+        <!-- ── Panel: Nuevo ── -->
+        <div class="panel" id="panelNuevo">
 
-    <h2>Resultados</h2>
-    <div id="resultados"></div>
+          <div class="topbar">
+            <div>
+              <div class="page-title">Nuevo expediente</div>
+              <div class="page-sub">Completá los campos y guardá el registro</div>
+            </div>
+          </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+          <div class="form-section" style="flex:1">
+            <div class="form-grid form-grid-4" style="max-width:720px">
+              <div class="field col-2">
+                <label for="numero">N° expediente *</label>
+                <input id="numero" placeholder="Ej: 2024-00123" />
+              </div>
+              <div class="field">
+                <label for="fecha">Fecha</label>
+                <input id="fecha" type="date" />
+              </div>
+              <div class="field">
+                <label for="tag">Tag</label>
+                <input id="tag" maxlength="20" placeholder="Ej: urgente" />
+              </div>
+              <div class="field col-2" style="grid-column:span 4">
+                <label for="detalle">Detalle *</label>
+                <textarea id="detalle" placeholder="Descripción completa del expediente…"></textarea>
+              </div>
+              <div class="field col-2">
+                <label for="interno">Interno</label>
+                <input id="interno" placeholder="Número interno" />
+              </div>
+              <div class="field col-2">
+                <label for="lpu">LPU</label>
+                <input id="lpu" placeholder="LPU" />
+              </div>
+            </div>
+            <div class="error-msg" id="formError"></div>
+            <div class="form-actions" style="margin-top:20px">
+              <button class="btn btn-primary" onclick="guardar()">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Guardar
+              </button>
+              <button class="btn btn-ghost" onclick="limpiarFormulario()">Limpiar</button>
+            </div>
+          </div>
 
+        </div>
+
+      </main>
+    </div>
+
+    <!-- ── Modal edición ── -->
+    <div class="overlay" id="editOverlay" onclick="overlayClick(event)">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">Editar expediente</div>
+          <button class="modal-close" onclick="cerrarModal()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <input type="hidden" id="editId" />
+        <div class="form-grid form-grid-2" style="gap:12px">
+          <div class="field">
+            <label>N° expediente</label>
+            <input id="editNumero" />
+          </div>
+          <div class="field">
+            <label>Fecha</label>
+            <input id="editFecha" type="date" />
+          </div>
+          <div class="field col-2">
+            <label>Detalle</label>
+            <textarea id="editDetalle"></textarea>
+          </div>
+          <div class="field">
+            <label>Interno</label>
+            <input id="editInterno" />
+          </div>
+          <div class="field">
+            <label>LPU</label>
+            <input id="editLpu" />
+          </div>
+          <div class="field col-2">
+            <label>Tag</label>
+            <input id="editTag" maxlength="20" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarEdicion()">Guardar cambios</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script>
-      const supabaseClient = supabase.createClient(
+
+      const sb = supabase.createClient(
         "https://efwfieepcaiftkgqsciq.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmd2ZpZWVwY2FpZnRrZ3FzY2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczOTI1MjUsImV4cCI6MjA5Mjk2ODUyNX0.Xv6_NbBSlMv4aNJ6-XVR_5MYuuyZNHhcYNdGYn3F7_Y",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmd2ZpZWVwY2FpZnRrZ3FzY2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczOTI1MjUsImV4cCI6MjA5Mjk2ODUyNX0.Xv6_NbBSlMv4aNJ6-XVR_5MYuuyZNHhcYNdGYn3F7_Y"
       );
 
       let user = null;
 
-      // 🔐 Mantener sesión
+      /* ── Auth ── */
       async function init() {
-        const { data } = await supabaseClient.auth.getUser();
-        if (data.user) {
-          user = data.user;
-          actualizarEstado();
-          buscar();
-        }
+        const { data } = await sb.auth.getUser();
+        if (data.user) { user = data.user; showApp(); buscar(); }
       }
 
-      function actualizarEstado() {
-        estado.innerText = user ? "Logueado: " + user.email : "No logueado";
+      function showApp() {
+        document.getElementById('loginWrap').style.display = 'none';
+        document.getElementById('appWrap').style.display = 'grid';
+        const email = user.email;
+        document.getElementById('userEmail').textContent = email;
+        document.getElementById('avatar').textContent = email.slice(0, 2).toUpperCase();
       }
 
-      // 🔐 LOGIN
       async function login() {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email: email.value,
-          password: password.value,
-        });
-
-        if (error) return alert(error.message);
-
+        const emailVal = document.getElementById('email').value.trim();
+        const passVal  = document.getElementById('password').value;
+        const errEl    = document.getElementById('loginError');
+        errEl.classList.remove('show');
+        if (!emailVal || !passVal) { showErr(errEl, 'Completá email y contraseña.'); return; }
+        const { data, error } = await sb.auth.signInWithPassword({ email: emailVal, password: passVal });
+        if (error) { showErr(errEl, error.message); return; }
         user = data.user;
-        actualizarEstado();
+        showApp();
         buscar();
       }
 
-      // 🔐 LOGOUT
       async function logout() {
-        await supabaseClient.auth.signOut();
+        await sb.auth.signOut();
         user = null;
-        actualizarEstado();
-        resultados.innerHTML = "";
+        document.getElementById('loginWrap').style.display = 'flex';
+        document.getElementById('appWrap').style.display = 'none';
+        document.getElementById('resultados').innerHTML = '';
       }
 
-      // 💾 GUARDAR
+      /* ── Panels ── */
+      function setPanel(name, btn) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        document.getElementById('panel' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+        btn.classList.add('active');
+      }
+
+      /* ── CRUD ── */
       async function guardar() {
-        if (!user) return alert("Tenés que loguearte");
-
-        const data = {
-          user_id: user.id,
-          numero_expediente: numero.value,
-          detalle: detalle.value,
-          interno: interno.value,
-          lpu: lpu.value,
-          tag: tag.value,
-          fecha: fecha.value,
+        if (!user) return;
+        const errEl = document.getElementById('formError');
+        errEl.classList.remove('show');
+        const payload = {
+          user_id:           user.id,
+          numero_expediente: v('numero'),
+          detalle:           v('detalle'),
+          interno:           v('interno'),
+          lpu:               v('lpu'),
+          tag:               v('tag'),
+          fecha:             v('fecha') || null,
         };
-
-        if (!data.numero_expediente || !data.detalle) {
-          return alert("Campos obligatorios");
+        if (!payload.numero_expediente || !payload.detalle) {
+          showErr(errEl, 'N° expediente y detalle son obligatorios.'); return;
         }
-
-        const { error } = await supabaseClient
-          .from("expedientes")
-          .insert([data]);
-
-        if (error) return alert(error.message);
-
-        alert("Guardado");
-
+        const { error } = await sb.from('expedientes').insert([payload]);
+        if (error) { showErr(errEl, error.message); return; }
         limpiarFormulario();
+        setPanel('lista', document.querySelector('.nav-item'));
         buscar();
       }
 
-      // 🔍 BUSCAR
       async function buscar() {
         if (!user) return;
-
-        let query = supabaseClient.from("expedientes").select("*");
-
-        if (f_numero.value)
-          query = query.ilike("numero_expediente", `%${f_numero.value}%`);
-
-        if (f_tag.value) query = query.ilike("tag", `%${f_tag.value}%`);
-
-        if (f_fecha.value) query = query.eq("fecha", f_fecha.value);
-
-        const { data, error } = await query.order("fecha", {
-          ascending: false,
-        });
-
-        if (error) return alert(error.message);
-
-        resultados.innerHTML = "";
-
-        if (data.length === 0) {
-          resultados.innerHTML = "<p>No hay resultados</p>";
-          return;
-        }
-
-        data.forEach((e) => {
-          resultados.innerHTML += `
-      <div class="card">
-        <b>${e.numero_expediente}</b><br>
-        ${e.detalle}<br>
-        <small>
-          Interno: ${e.interno || "-"} |
-          LPU: ${e.lpu || "-"} |
-          Tag: ${e.tag || "-"} |
-          Fecha: ${e.fecha}
-        </small>
-      </div>
-    `;
-        });
+        let q = sb.from('expedientes').select('*');
+        const fn = v('f_numero'), ft = v('f_tag'), ff = v('f_fecha');
+        if (fn) q = q.ilike('numero_expediente', `%${fn}%`);
+        if (ft) q = q.ilike('tag', `%${ft}%`);
+        if (ff) q = q.eq('fecha', ff);
+        const { data, error } = await q.order('fecha', { ascending: false });
+        if (error) return;
+        renderResultados(data || []);
+        actualizarStats(data || []);
       }
 
-      // 🧹 LIMPIAR FILTROS
-      function limpiarFiltros() {
-        f_numero.value = "";
-        f_tag.value = "";
-        f_fecha.value = "";
+      function actualizarStats(data) {
+        const now = new Date();
+        const esteMes = data.filter(e => {
+          if (!e.fecha) return false;
+          const d = new Date(e.fecha + 'T00:00:00');
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        }).length;
+        document.getElementById('statTotal').textContent    = data.length;
+        document.getElementById('statMes').textContent      = esteMes;
+        document.getElementById('statFiltrados').textContent = data.length;
+        const filtrado = v('f_numero') || v('f_tag') || v('f_fecha');
+        document.getElementById('resultsCount').textContent =
+          filtrado ? `${data.length} resultado${data.length !== 1 ? 's' : ''} filtrado${data.length !== 1 ? 's' : ''}` : '';
+      }
+
+      function renderResultados(data) {
+        const el = document.getElementById('resultados');
+        if (!data.length) {
+          el.innerHTML = `<div class="empty-state">
+            <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <p>No hay expedientes</p>
+          </div>`;
+          return;
+        }
+        el.innerHTML = data.map((e, i) => `
+          <div class="card">
+            <div class="card-inner">
+              <div class="card-index">${String(i + 1).padStart(2, '0')}</div>
+              <div class="card-body">
+                <div class="card-head">
+                  <span class="card-num">${esc(e.numero_expediente)}</span>
+                </div>
+                <div class="card-detalle">${esc(e.detalle)}</div>
+                <div class="card-chips">
+                  ${e.interno ? `<span class="chip">Int: ${esc(e.interno)}</span>` : ''}
+                  ${e.lpu     ? `<span class="chip">LPU: ${esc(e.lpu)}</span>` : ''}
+                  ${e.tag     ? `<span class="chip chip-tag">${esc(e.tag)}</span>` : ''}
+                  ${e.fecha   ? `<span class="chip chip-fecha">${e.fecha}</span>` : ''}
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn btn-edit-soft" onclick='abrirEdicion(${JSON.stringify(e).replace(/'/g, "&#39;")})'>Editar</button>
+                <button class="btn btn-danger-soft" onclick="eliminar('${e.id}')">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      async function eliminar(id) {
+        if (!confirm('¿Eliminar este expediente? Esta acción no se puede deshacer.')) return;
+        const { error } = await sb.from('expedientes').delete().eq('id', id);
+        if (error) return alert(error.message);
         buscar();
       }
 
-      // 🧹 LIMPIAR FORM
-      function limpiarFormulario() {
-        numero.value = "";
-        detalle.value = "";
-        interno.value = "";
-        lpu.value = "";
-        tag.value = "";
-        fecha.value = "";
+      function abrirEdicion(e) {
+        document.getElementById('editId').value      = e.id;
+        document.getElementById('editNumero').value  = e.numero_expediente || '';
+        document.getElementById('editDetalle').value = e.detalle           || '';
+        document.getElementById('editInterno').value = e.interno           || '';
+        document.getElementById('editLpu').value     = e.lpu               || '';
+        document.getElementById('editTag').value     = e.tag               || '';
+        document.getElementById('editFecha').value   = e.fecha             || '';
+        document.getElementById('editOverlay').classList.add('open');
       }
 
-      // INIT
+      function cerrarModal() { document.getElementById('editOverlay').classList.remove('open'); }
+      function overlayClick(e) { if (e.target === e.currentTarget) cerrarModal(); }
+
+      async function guardarEdicion() {
+        const payload = {
+          numero_expediente: document.getElementById('editNumero').value,
+          detalle:           document.getElementById('editDetalle').value,
+          interno:           document.getElementById('editInterno').value,
+          lpu:               document.getElementById('editLpu').value,
+          tag:               document.getElementById('editTag').value,
+          fecha:             document.getElementById('editFecha').value || null,
+        };
+        const { error } = await sb.from('expedientes').update(payload).eq('id', document.getElementById('editId').value);
+        if (error) return alert(error.message);
+        cerrarModal();
+        buscar();
+      }
+
+      /* ── Helpers ── */
+      function limpiarFiltros() {
+        ['f_numero','f_tag','f_fecha'].forEach(id => document.getElementById(id).value = '');
+        buscar();
+      }
+
+      function limpiarFormulario() {
+        ['numero','detalle','interno','lpu','tag','fecha'].forEach(id => document.getElementById(id).value = '');
+      }
+
+      function v(id) { return document.getElementById(id)?.value?.trim() || ''; }
+
+      function esc(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
+
+      /* ── Enter key on login ── */
+      document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
       init();
     </script>
   </body>
