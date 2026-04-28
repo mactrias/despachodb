@@ -3,16 +3,64 @@
   <head>
     <meta charset="UTF-8" />
     <title>Expedientes</title>
+
+    <style>
+      body {
+        font-family: Arial;
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+      }
+
+      input,
+      textarea,
+      button {
+        margin: 5px 0;
+        padding: 8px;
+        width: 100%;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .card {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 6px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+    </style>
   </head>
+
   <body>
+    <div class="topbar">
+      <div id="estado">No logueado</div>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <h2>Login</h2>
+
+    <input id="email" placeholder="email" />
+    <input id="password" type="password" placeholder="password" />
+    <button onclick="login()">Login</button>
+
+    <hr />
+
     <h2>Cargar expediente</h2>
 
-    <input id="numero" placeholder="N° expediente" /><br />
-    <textarea id="detalle" placeholder="Detalle"></textarea><br />
-    <input id="interno" placeholder="Interno" /><br />
-    <input id="lpu" placeholder="LPU" /><br />
-    <input id="tag" placeholder="Tag" maxlength="20" /><br />
-    <input id="fecha" type="date" /><br />
+    <input id="numero" placeholder="N° expediente" />
+    <textarea id="detalle" placeholder="Detalle"></textarea>
+    <input id="interno" placeholder="Interno" />
+    <input id="lpu" placeholder="LPU" />
+    <input id="tag" maxlength="20" placeholder="Tag" />
+    <input id="fecha" type="date" />
 
     <button onclick="guardar()">Guardar</button>
 
@@ -21,12 +69,11 @@
     <h2>Filtros</h2>
 
     <input id="f_numero" placeholder="Expediente" />
-    <input id="f_interno" placeholder="Interno" />
-    <input id="f_lpu" placeholder="LPU" />
     <input id="f_tag" placeholder="Tag" />
     <input id="f_fecha" type="date" />
 
     <button onclick="buscar()">Buscar</button>
+    <button onclick="limpiarFiltros()">Limpiar filtros</button>
 
     <hr />
 
@@ -41,8 +88,50 @@
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmd2ZpZWVwY2FpZnRrZ3FzY2lxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczOTI1MjUsImV4cCI6MjA5Mjk2ODUyNX0.Xv6_NbBSlMv4aNJ6-XVR_5MYuuyZNHhcYNdGYn3F7_Y",
       );
 
+      let user = null;
+
+      // 🔐 Mantener sesión
+      async function init() {
+        const { data } = await supabaseClient.auth.getUser();
+        if (data.user) {
+          user = data.user;
+          actualizarEstado();
+          buscar();
+        }
+      }
+
+      function actualizarEstado() {
+        estado.innerText = user ? "Logueado: " + user.email : "No logueado";
+      }
+
+      // 🔐 LOGIN
+      async function login() {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: email.value,
+          password: password.value,
+        });
+
+        if (error) return alert(error.message);
+
+        user = data.user;
+        actualizarEstado();
+        buscar();
+      }
+
+      // 🔐 LOGOUT
+      async function logout() {
+        await supabaseClient.auth.signOut();
+        user = null;
+        actualizarEstado();
+        resultados.innerHTML = "";
+      }
+
+      // 💾 GUARDAR
       async function guardar() {
+        if (!user) return alert("Tenés que loguearte");
+
         const data = {
+          user_id: user.id,
           numero_expediente: numero.value,
           detalle: detalle.value,
           interno: interno.value,
@@ -52,49 +141,83 @@
         };
 
         if (!data.numero_expediente || !data.detalle) {
-          alert("Completar campos obligatorios");
-          return;
+          return alert("Campos obligatorios");
         }
 
         const { error } = await supabaseClient
           .from("expedientes")
           .insert([data]);
 
-        if (error) alert(error.message);
-        else {
-          alert("Guardado");
-          buscar();
-        }
+        if (error) return alert(error.message);
+
+        alert("Guardado");
+
+        limpiarFormulario();
+        buscar();
       }
 
+      // 🔍 BUSCAR
       async function buscar() {
+        if (!user) return;
+
         let query = supabaseClient.from("expedientes").select("*");
 
         if (f_numero.value)
           query = query.ilike("numero_expediente", `%${f_numero.value}%`);
-        if (f_interno.value)
-          query = query.ilike("interno", `%${f_interno.value}%`);
-        if (f_lpu.value) query = query.ilike("lpu", `%${f_lpu.value}%`);
+
         if (f_tag.value) query = query.ilike("tag", `%${f_tag.value}%`);
+
         if (f_fecha.value) query = query.eq("fecha", f_fecha.value);
 
-        const { data } = await query.order("fecha", { ascending: false });
+        const { data, error } = await query.order("fecha", {
+          ascending: false,
+        });
+
+        if (error) return alert(error.message);
 
         resultados.innerHTML = "";
 
+        if (data.length === 0) {
+          resultados.innerHTML = "<p>No hay resultados</p>";
+          return;
+        }
+
         data.forEach((e) => {
           resultados.innerHTML += `
-      <div style="border:1px solid #ccc;margin:5px;padding:5px;">
+      <div class="card">
         <b>${e.numero_expediente}</b><br>
         ${e.detalle}<br>
-        Interno: ${e.interno || "-"} | LPU: ${e.lpu || "-"} | Tag: ${e.tag || "-"}<br>
-        Fecha: ${e.fecha}
+        <small>
+          Interno: ${e.interno || "-"} |
+          LPU: ${e.lpu || "-"} |
+          Tag: ${e.tag || "-"} |
+          Fecha: ${e.fecha}
+        </small>
       </div>
     `;
         });
       }
 
-      buscar();
+      // 🧹 LIMPIAR FILTROS
+      function limpiarFiltros() {
+        f_numero.value = "";
+        f_tag.value = "";
+        f_fecha.value = "";
+        buscar();
+      }
+
+      // 🧹 LIMPIAR FORM
+      function limpiarFormulario() {
+        numero.value = "";
+        detalle.value = "";
+        interno.value = "";
+        lpu.value = "";
+        tag.value = "";
+        fecha.value = "";
+      }
+
+      // INIT
+      init();
     </script>
   </body>
 </html>
